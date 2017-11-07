@@ -44,19 +44,6 @@ void init() {
     #if defined(__APPLE__)
         disable_saved_application_state_osx();
     #endif
-
-    glfwSetErrorCallback(
-        [](int error, const char *descr) {
-            if (error == GLFW_NOT_INITIALIZED)
-                return; /* Ignore */
-            std::cerr << "GLFW error " << error << ": " << descr << std::endl;
-        }
-    );
-
-    if (!glfwInit())
-        throw std::runtime_error("Could not initialize GLFW!");
-
-    glfwSetTime(0);
 }
 
 static bool mainloop_active = false;
@@ -67,57 +54,7 @@ void mainloop(int refresh) {
 
     mainloop_active = true;
 
-    std::thread refresh_thread;
-    if (refresh > 0) {
-        /* If there are no mouse/keyboard events, try to refresh the
-           view roughly every 50 ms (default); this is to support animations
-           such as progress bars while keeping the system load
-           reasonably low */
-        refresh_thread = std::thread(
-            [refresh]() {
-                std::chrono::milliseconds time(refresh);
-                while (mainloop_active) {
-                    std::this_thread::sleep_for(time);
-                    glfwPostEmptyEvent();
-                }
-            }
-        );
-    }
-
-    try {
-        while (mainloop_active) {
-            int numScreens = 0;
-            for (auto kv : __nanogui_screens) {
-                Screen *screen = kv.second;
-                if (!screen->visible()) {
-                    continue;
-                } else if (glfwWindowShouldClose(screen->glfwWindow())) {
-                    screen->setVisible(false);
-                    continue;
-                }
-                screen->drawAll();
-                numScreens++;
-            }
-
-            if (numScreens == 0) {
-                /* Give up if there was nothing to draw */
-                mainloop_active = false;
-                break;
-            }
-
-            /* Wait for mouse/keyboard or empty refresh events */
-            glfwWaitEvents();
-        }
-
-        /* Process events once more */
-        glfwPollEvents();
-    } catch (const std::exception &e) {
-        std::cerr << "Caught exception in main loop: " << e.what() << std::endl;
-        leave();
-    }
-
-    if (refresh > 0)
-        refresh_thread.join();
+    
 }
 
 void leave() {

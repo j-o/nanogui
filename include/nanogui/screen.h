@@ -77,11 +77,7 @@ public:
      *     invalid profile will result in no context (and therefore no GUI)
      *     being created.
      */
-    Screen(const Vector2i &size, const std::string &caption,
-           bool resizable = true, bool fullscreen = false, int colorBits = 8,
-           int alphaBits = 8, int depthBits = 24, int stencilBits = 8,
-           int nSamples = 0,
-           unsigned int glMajor = 3, unsigned int glMinor = 3);
+    Screen(const std::string &caption);
 
     /// Release all resources
     virtual ~Screen();
@@ -132,14 +128,8 @@ public:
     /// Return the last observed mouse position value
     Vector2i mousePos() const { return mMousePos; }
 
-    /// Return a pointer to the underlying GLFW window data structure
-    GLFWwindow *glfwWindow() { return mGLFWWindow; }
-
     /// Return a pointer to the underlying nanoVG draw context
     NVGcontext *nvgContext() { return mNVGContext; }
-
-    void setShutdownGLFWOnDestruct(bool v) { mShutdownGLFWOnDestruct = v; }
-    bool shutdownGLFWOnDestruct() { return mShutdownGLFWOnDestruct; }
 
     using Widget::performLayout;
 
@@ -166,7 +156,7 @@ public:
     Screen();
 
     /// Initialize the \ref Screen
-    void initialize(GLFWwindow *window, bool shutdownGLFWOnDestruct);
+    void initialize();
 
     /* Event handlers */
     bool cursorPosCallbackEvent(double x, double y);
@@ -185,10 +175,7 @@ public:
     void drawWidgets();
 
 protected:
-    GLFWwindow *mGLFWWindow;
     NVGcontext *mNVGContext;
-    GLFWcursor *mCursors[(int) Cursor::CursorCount];
-    Cursor mCursor;
     std::vector<Widget *> mFocusPath;
     Vector2i mFBSize;
     float mPixelRatio;
@@ -200,8 +187,6 @@ protected:
     bool mProcessEvents;
     Color mBackground;
     std::string mCaption;
-    bool mShutdownGLFWOnDestruct;
-    bool mFullscreen;
     std::function<void(Vector2i)> mResizeCallback;
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

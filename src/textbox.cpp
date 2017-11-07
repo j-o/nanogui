@@ -511,32 +511,32 @@ bool TextBox::checkFormat(const std::string &input, const std::string &format) {
 }
 
 bool TextBox::copySelection() {
-    if (mSelectionPos > -1) {
-        Screen *sc = dynamic_cast<Screen *>(this->window()->parent());
-        if (!sc)
-            return false;
+    //if (mSelectionPos > -1) {
+    //    Screen *sc = dynamic_cast<Screen *>(this->window()->parent());
+    //    if (!sc)
+    //        return false;
 
-        int begin = mCursorPos;
-        int end = mSelectionPos;
+    //    int begin = mCursorPos;
+    //    int end = mSelectionPos;
 
-        if (begin > end)
-            std::swap(begin, end);
+    //    if (begin > end)
+    //        std::swap(begin, end);
 
-        glfwSetClipboardString(sc->glfwWindow(),
-                               mValueTemp.substr(begin, end).c_str());
-        return true;
-    }
+    //    glfwSetClipboardString(sc->glfwWindow(),
+    //                           mValueTemp.substr(begin, end).c_str());
+    //    return true;
+    //}
 
     return false;
 }
 
 void TextBox::pasteFromClipboard() {
-    Screen *sc = dynamic_cast<Screen *>(this->window()->parent());
-    if (!sc)
-        return;
-    const char* cbstr = glfwGetClipboardString(sc->glfwWindow());
-    if (cbstr)
-        mValueTemp.insert(mCursorPos, std::string(cbstr));
+    //Screen *sc = dynamic_cast<Screen *>(this->window()->parent());
+    //if (!sc)
+    //    return;
+    //const char* cbstr = glfwGetClipboardString(sc->glfwWindow());
+    //if (cbstr)
+    //    mValueTemp.insert(mCursorPos, std::string(cbstr));
 }
 
 bool TextBox::deleteSelection() {
