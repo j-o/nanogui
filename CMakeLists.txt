@@ -11,6 +11,9 @@ if (POLICY CMP0058)
   cmake_policy(SET CMP0058 NEW)
 endif()
 
+# Include cmake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+
 if (NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/src")
   message(FATAL_ERROR "The NanoGUI dependency repositories (GLFW, etc.) are missing! "
     "You probably did not clone the project with --recursive. It is possible to recover "
@@ -27,7 +30,13 @@ option(NANOGUI_BUILD_EXAMPLE "Build NanoGUI example application?" ON)
 option(NANOGUI_BUILD_SHARED  "Build NanoGUI as a shared library?" ON)
 option(NANOGUI_BUILD_PYTHON  "Build a Python plugin for NanoGUI?" ON)
 option(NANOGUI_USE_GLAD      "Use Glad OpenGL loader library?" ${NANOGUI_USE_GLAD_DEFAULT})
+option(NANOGUI_USE_GLBINDING "Use glbinding OpenGL loader libaray" OFF)
+option(NANOGUI_USE_EXTERNAL_GLFW "Use GLFW locate via find script instead of in-sourse distributed" OFF)
 option(NANOGUI_INSTALL       "Install NanoGUI on `make install`?" ON)
+
+if (NANOGUI_USE_GLAD AND NANOGUI_USE_GLBINDING)
+  message(FATAL_ERROR "Only one of NANOGUI_USE_GLAD and NANOGUI_USE_GLBINDING may be selected!")
+endif()
 
 set(NANOGUI_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling the Python plugin")
 
@@ -64,27 +73,36 @@ macro(CHECK_CXX_COMPILER_AND_LINKER_FLAGS _RESULT _CXX_FLAGS _LINKER_FLAGS)
   set(CMAKE_REQUIRED_LIBRARIES "")
 endmacro()
 
-# Compile GLFW
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL " " FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL " " FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL " " FORCE)
-set(GLFW_BUILD_INSTALL OFF CACHE BOOL " " FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL " " FORCE)
-set(GLFW_USE_CHDIR OFF CACHE BOOL " " FORCE)
-set(BUILD_SHARED_LIBS ${NANOGUI_BUILD_SHARED} CACHE BOOL " " FORCE)
+if (NANOGUI_USE_EXTERNAL_GLFW)
+  find_package(GLFW REQUIRED)
+  include_directories(${GLFW_INCLUDE_DIR})
+  list(APPEND NANOGUI_EXTRA_LIBS ${GLFW_LIBRARIES} ${GLFW_cocoa_LIBRARY} ${GLFW_iokit_LIBRARY} ${GLFW_corevideo_LIBRARY})
+  set(GLFW_TARGET_OBJECTS "")
+else()
+  # Compile GLFW
+  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL " " FORCE)
+  set(GLFW_BUILD_TESTS OFF CACHE BOOL " " FORCE)
+  set(GLFW_BUILD_DOCS OFF CACHE BOOL " " FORCE)
+  set(GLFW_BUILD_INSTALL OFF CACHE BOOL " " FORCE)
+  set(GLFW_INSTALL OFF CACHE BOOL " " FORCE)
+  set(GLFW_USE_CHDIR OFF CACHE BOOL " " FORCE)
+  set(BUILD_SHARED_LIBS ${NANOGUI_BUILD_SHARED} CACHE BOOL " " FORCE)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  # Quench annoying deprecation warnings when compiling GLFW on OSX
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Quench annoying deprecation warnings when compiling GLFW on OSX
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
+  endif()
+
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw" "ext_build/glfw")
+  # Two targets have now been defined: `glfw_objects`, which will be merged into
+  # NanoGUI at the end, and `glfw`.  The `glfw` target is the library itself
+  # (e.g., libglfw.so), but can be skipped as we do not need to link against it
+  # (because we merge `glfw_objects` into NanoGUI).  Skipping is required for
+  # XCode, but preferable for all build systems (reduces build artifacts).
+  set_target_properties(glfw PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+
+  set(GLFW_TARGET_OBJECTS "$<TARGET_OBJECTS:glfw_objects>")
 endif()
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw" "ext_build/glfw")
-# Two targets have now been defined: `glfw_objects`, which will be merged into
-# NanoGUI at the end, and `glfw`.  The `glfw` target is the library itself
-# (e.g., libglfw.so), but can be skipped as we do not need to link against it
-# (because we merge `glfw_objects` into NanoGUI).  Skipping is required for
-# XCode, but preferable for all build systems (reduces build artifacts).
-set_target_properties(glfw PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 
 # Python support: add NANOGUI_PYTHON flag to all targets
 if (NANOGUI_BUILD_PYTHON)
@@ -215,6 +233,14 @@ if (NANOGUI_USE_GLAD)
   include_directories(ext/glad/include)
   list(APPEND NANOGUI_EXTRA_DEFS -DNANOGUI_GLAD)
   list(APPEND NANOGUI_EXTRA_INCS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glad/include")
+endif()
+
+if (NANOGUI_USE_GLBINDING)
+  find_package(glbinding REQUIRED)
+  list(APPEND NANOGUI_EXTRA_DEFS -DNANOGUI_GLBINDING -DGLFW_INCLUDE_NONE)
+  list(APPEND NANOGUI_EXTRA_LIBS glbinding::glbinding)
+  get_target_property(GLBINDING_INCLUDE_DIRS glbinding::glbinding INTERFACE_INCLUDE_DIRECTORIES)
+  include_directories(${GLBINDING_INCLUDE_DIRS})
 endif()
 
 list(APPEND NANOGUI_EXTRA_INCS
@@ -363,12 +389,12 @@ if (CMAKE_GENERATOR STREQUAL Xcode)
   add_library(nanogui ${NANOGUI_LIBRARY_TYPE}
     ${XCODE_DUMMY}
     $<TARGET_OBJECTS:nanogui-obj>
-    $<TARGET_OBJECTS:glfw_objects>
+    ${GLFW_TARGET_OBJECTS}
   )
 else()
   add_library(nanogui ${NANOGUI_LIBRARY_TYPE}
     $<TARGET_OBJECTS:nanogui-obj>
-    $<TARGET_OBJECTS:glfw_objects>
+    ${GLFW_TARGET_OBJECTS}
   )
 endif()
 

@@ -43,6 +43,10 @@ std::map<GLFWwindow *, Screen *> __nanogui_screens;
 static bool gladInitialized = false;
 #endif
 
+#if defined(NANOGUI_GLBINDING)
+static bool glbindingInitialized = false;
+#endif
+
 /* Calculate pixel ratio for hi-dpi devices. */
 static float get_pixel_ratio(GLFWwindow *window) {
 #if defined(_WIN32)
@@ -136,7 +140,7 @@ Screen::Screen(const Vector2i &size, const std::string &caption, bool resizable,
        Default value is an OpenGL 3.3 core profile context. */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glMajor);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glMinor);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     glfwWindowHint(GLFW_SAMPLES, nSamples);
@@ -146,8 +150,8 @@ Screen::Screen(const Vector2i &size, const std::string &caption, bool resizable,
     glfwWindowHint(GLFW_ALPHA_BITS, alphaBits);
     glfwWindowHint(GLFW_STENCIL_BITS, stencilBits);
     glfwWindowHint(GLFW_DEPTH_BITS, depthBits);
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, resizable ? GL_TRUE : GL_FALSE);
+    glfwWindowHint(GLFW_VISIBLE, false);
+    glfwWindowHint(GLFW_RESIZABLE, resizable);
 
     if (fullscreen) {
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
@@ -171,6 +175,14 @@ Screen::Screen(const Vector2i &size, const std::string &caption, bool resizable,
         gladInitialized = true;
         if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
             throw std::runtime_error("Could not initialize GLAD!");
+        glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
+    }
+#endif
+
+#if defined (NANOGUI_GLBINDING)
+    if (!glbindingInitialized) {
+        glbindingInitialized = true;
+        glbinding::initialize(glfwGetProcAddress);
         glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
     }
 #endif
@@ -316,6 +328,14 @@ void Screen::initialize(GLFWwindow *window, bool shutdownGLFWOnDestruct) {
         gladInitialized = true;
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             throw std::runtime_error("Could not initialize GLAD!");
+        glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
+    }
+#endif
+
+#if defined (NANOGUI_GLBINDING)
+    if (!glbindingInitialized) {
+        glbindingInitialized = true;
+        glbinding::initialize(glfwGetProcAddress);
         glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
     }
 #endif

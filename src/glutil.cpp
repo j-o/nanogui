@@ -23,7 +23,7 @@
 
 NAMESPACE_BEGIN(nanogui)
 
-static GLuint createShader_helper(GLint type, const std::string &name,
+static GLuint createShader_helper(GLenum type, const std::string &name,
                                   const std::string &defines,
                                   std::string shader_string) {
     if (shader_string.empty())
@@ -53,7 +53,7 @@ static GLuint createShader_helper(GLint type, const std::string &name,
     GLint status;
     glGetShaderiv(id, GL_COMPILE_STATUS, &status);
 
-    if (status != GL_TRUE) {
+    if ((GLboolean) status != GL_TRUE) {
         char buffer[512];
         std::cerr << "Error while compiling ";
         if (type == GL_VERTEX_SHADER)
@@ -126,7 +126,7 @@ bool GLShader::init(const std::string &name,
     GLint status;
     glGetProgramiv(mProgramShader, GL_LINK_STATUS, &status);
 
-    if (status != GL_TRUE) {
+    if ((GLboolean) status != GL_TRUE) {
         char buffer[512];
         glGetProgramInfoLog(mProgramShader, 512, nullptr, buffer);
         std::cerr << "Linker error (" << mName << "): " << std::endl << buffer << std::endl;
@@ -167,7 +167,7 @@ GLint GLShader::uniform(const std::string &name, bool warn) const {
 }
 
 void GLShader::uploadAttrib(const std::string &name, size_t size, int dim,
-                            uint32_t compSize, GLuint glType, bool integral,
+                            uint32_t compSize, GLenum glType, bool integral,
                             const void *data, int version) {
     int attribID = 0;
     if (name != "indices") {
@@ -213,7 +213,8 @@ void GLShader::uploadAttrib(const std::string &name, size_t size, int dim,
 }
 
 void GLShader::downloadAttrib(const std::string &name, size_t size, int /* dim */,
-                             uint32_t compSize, GLuint /* glType */, void *data) {
+                              uint32_t compSize, GLenum
+                              /* glType */, void *data) {
     auto it = mBufferObjects.find(name);
     if (it == mBufferObjects.end())
         throw std::runtime_error("downloadAttrib(" + mName + ", " + name + ") : buffer not found!");
@@ -265,7 +266,7 @@ void GLShader::freeAttrib(const std::string &name) {
     }
 }
 
-void GLShader::drawIndexed(int type, uint32_t offset_, uint32_t count_) {
+void GLShader::drawIndexed(GLenum type, uint32_t offset_, uint32_t count_) {
     if (count_ == 0)
         return;
     size_t offset = offset_;
@@ -280,7 +281,7 @@ void GLShader::drawIndexed(int type, uint32_t offset_, uint32_t count_) {
                    (const void *)(offset * sizeof(uint32_t)));
 }
 
-void GLShader::drawArray(int type, uint32_t offset, uint32_t count) {
+void GLShader::drawArray(GLenum type, uint32_t offset, uint32_t count) {
     if (count == 0)
         return;
 

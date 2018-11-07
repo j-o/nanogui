@@ -19,6 +19,9 @@
     #endif
 
     #include <glad/glad.h>
+#elif defined(NANOGUI_GLBINDING)
+    #include <glbinding/glbinding.h>
+    #include <glbinding/gl/gl.h>
 #else
     #if defined(__APPLE__)
         #define GLFW_INCLUDE_GLCOREARB
@@ -58,7 +61,7 @@ int main(int /* argc */, char ** /* argv */) {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     glfwWindowHint(GLFW_SAMPLES, 0);
@@ -68,7 +71,7 @@ int main(int /* argc */, char ** /* argv */) {
     glfwWindowHint(GLFW_ALPHA_BITS, 8);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
-    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, true);
 
     // Create a GLFWwindow object
     GLFWwindow* window = glfwCreateWindow(800, 800, "example3", nullptr, nullptr);
@@ -82,6 +85,9 @@ int main(int /* argc */, char ** /* argv */) {
 #if defined(NANOGUI_GLAD)
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
         throw std::runtime_error("Could not initialize GLAD!");
+    glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
+#elif defined(NANOGUI_GLBINDING)
+    glbinding::initialize(glfwGetProcAddress);
     glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
 #endif
 

@@ -22,6 +22,10 @@
     #endif
 
     #include <glad/glad.h>
+#elif defined(NANOGUI_GLBINDING)
+    #include <glbinding/glbinding.h>
+    #include <glbinding/gl/gl.h>
+    using namespace gl;
 #else
     #if defined(__APPLE__)
         #define GLFW_INCLUDE_GLCOREARB

@@ -73,7 +73,7 @@ public:
      */
     struct Buffer {
         GLuint id;      ///< The identifier used with OpenGL.
-        GLuint glType;  ///< The OpenGL type of this buffer.
+        GLenum glType;  ///< The OpenGL type of this buffer.
         GLuint dim;     ///< The dimension of this buffer (typically the row width).
         GLuint compSize;///< The size (in bytes) of an individual element in this buffer.
         GLuint size;    ///< The total number of elements represented by this buffer.
@@ -155,7 +155,7 @@ public:
     /// Upload an Eigen matrix as a vertex buffer object (refreshing it as needed)
     template <typename Matrix> void uploadAttrib(const std::string &name, const Matrix &M, int version = -1) {
         uint32_t compSize = sizeof(typename Matrix::Scalar);
-        GLuint glType = (GLuint) detail::type_traits<typename Matrix::Scalar>::type;
+        GLenum glType = (GLenum) detail::type_traits<typename Matrix::Scalar>::type;
         bool integral = (bool) detail::type_traits<typename Matrix::Scalar>::integral;
 
         uploadAttrib(name, (uint32_t) M.size(), (int) M.rows(), compSize,
@@ -215,10 +215,10 @@ public:
     }
 
     /// Draw a sequence of primitives
-    void drawArray(int type, uint32_t offset, uint32_t count);
+    void drawArray(GLenum type, uint32_t offset, uint32_t count);
 
     /// Draw a sequence of primitives using a previously uploaded index buffer
-    void drawIndexed(int type, uint32_t offset, uint32_t count);
+    void drawIndexed(GLenum type, uint32_t offset, uint32_t count);
 
     /// Initialize a uniform parameter with a 4x4 matrix (float)
     template <typename T>
@@ -349,10 +349,10 @@ public:
 public:
     /* Low-level API */
     void uploadAttrib(const std::string &name, size_t size, int dim,
-                       uint32_t compSize, GLuint glType, bool integral,
-                       const void *data, int version = -1);
+                      uint32_t compSize, GLenum glType, bool integral,
+                      const void *data, int version = -1);
     void downloadAttrib(const std::string &name, size_t size, int dim,
-                       uint32_t compSize, GLuint glType, void *data);
+                        uint32_t compSize, GLenum glType, void *data);
 
 protected:
     /// The registered name of this GLShader.

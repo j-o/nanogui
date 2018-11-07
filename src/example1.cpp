@@ -117,14 +117,14 @@ public:
             throw std::invalid_argument("Could not load texture data from file " + fileName);
         glGenTextures(1, &mTextureId);
         glBindTexture(GL_TEXTURE_2D, mTextureId);
-        GLint internalFormat;
-        GLint format;
+        GLenum internalFormat;
+        GLenum format;
         switch (n) {
             case 1: internalFormat = GL_R8; format = GL_RED; break;
             case 2: internalFormat = GL_RG8; format = GL_RG; break;
             case 3: internalFormat = GL_RGB8; format = GL_RGB; break;
             case 4: internalFormat = GL_RGBA8; format = GL_RGBA; break;
-            default: internalFormat = 0; format = 0; break;
+            default: internalFormat = (GLenum) 0; format = (GLenum) 0; break;
         }
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, w, h, 0, format, GL_UNSIGNED_BYTE, textureData.get());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
